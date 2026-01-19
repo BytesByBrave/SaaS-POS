@@ -6,7 +6,7 @@ import type { Product, Order } from '../db/database'
 import { useScanner } from '../services/ScannerService'
 import { HardwareService } from '../services/HardwareService'
 
-const CATEGORIES = ['All', 'Coffee', 'Tea', 'Pastries', 'Sandwiches']
+const CATEGORIES = ['All', 'Coffee', 'Tea', 'Pastries', 'Sandwiches', 'Juices', 'Desserts']
 
 export function PosPage() {
     const [activeCategory, setActiveCategory] = useState('All')
