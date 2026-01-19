@@ -36,11 +36,15 @@ function createWindow() {
     }
 }
 
-// Receipt Printing Handler
-ipcMain.on('print-receipt', (_event, { text }) => {
-    console.log('Main process received print request:', text);
+// Printer Management
+ipcMain.handle('get-printers', async () => {
+    return await win?.webContents.getPrintersAsync();
+});
 
-    // Create a hidden printer window
+// Receipt Printing Handler
+ipcMain.on('print-receipt', (_event, { text, deviceName }) => {
+    console.log('Main process received print request for device:', deviceName || 'Default');
+
     let workerWin = new BrowserWindow({
         show: false,
         webPreferences: {
@@ -48,26 +52,21 @@ ipcMain.on('print-receipt', (_event, { text }) => {
         }
     });
 
-    // Load the receipt content
     const html = `
         <html>
         <body style="margin: 0; padding: 10px; font-family: 'Courier New', Courier, monospace; font-size: 12px; width: 300px;">
             <pre style="white-space: pre-wrap; word-wrap: break-word;">${text}</pre>
         </body>
-        <script>
-            window.onload = () => { window.print(); }
-        </script>
         </html>
     `;
 
     workerWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
 
     workerWin.webContents.on('did-finish-load', () => {
-        // Silent printing if possible, or show printer dialog
         workerWin.webContents.print({
             silent: true,
             printBackground: true,
-            deviceName: '' // Leave empty for default printer
+            deviceName: deviceName || ''
         }, (success, errorType) => {
             if (!success) console.error('Print failed:', errorType);
             workerWin.close();

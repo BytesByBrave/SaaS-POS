@@ -1,5 +1,105 @@
-import { useState } from 'react'
-import { Save, User, Building, Printer, CreditCard, Shield, Bell } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Save, User, Building, Printer, CreditCard, Shield, Bell, RefreshCw } from 'lucide-react'
+import { HardwareService } from '../services/HardwareService'
+
+function HardwareSettings() {
+    const [printers, setPrinters] = useState<any[]>([])
+    const [selectedPrinter, setSelectedPrinter] = useState(localStorage.getItem('selected_printer') || '')
+    const [loading, setLoading] = useState(false)
+
+    const fetchPrinters = async () => {
+        setLoading(true)
+        try {
+            const list = await HardwareService.getPrinters()
+            setPrinters(list)
+        } catch (error) {
+            console.error('Failed to fetch printers:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        fetchPrinters()
+    }, [])
+
+    const handleSelectPrinter = (name: string) => {
+        setSelectedPrinter(name)
+        localStorage.setItem('selected_printer', name)
+    }
+
+    return (
+        <div className="space-y-8 max-w-2xl">
+            <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold">Printer & Scanner</h3>
+                <button
+                    onClick={fetchPrinters}
+                    disabled={loading}
+                    className="p-2 hover:bg-secondary rounded-lg transition-all text-muted-foreground hover:text-primary disabled:opacity-50"
+                >
+                    <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+            </div>
+
+            <div className="space-y-6">
+                <div className="p-6 rounded-2xl border bg-background space-y-4">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-primary/10 rounded-xl text-primary">
+                            <Printer className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="font-bold text-lg">Receipt Printer</div>
+                            <p className="text-sm text-muted-foreground">Select your thermal receipt printer</p>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-2">
+                        {printers.length > 0 ? (
+                            printers.map((printer) => (
+                                <button
+                                    key={printer.name}
+                                    onClick={() => handleSelectPrinter(printer.name)}
+                                    className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${selectedPrinter === printer.name
+                                            ? 'border-primary bg-primary/5 shadow-sm'
+                                            : 'border-transparent bg-muted/30 hover:bg-muted/50'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`h-2 w-2 rounded-full ${printer.status === 0 ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                                        <span className="font-bold">{printer.name}</span>
+                                    </div>
+                                    {selectedPrinter === printer.name && (
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded-md">Selected</span>
+                                    )}
+                                </button>
+                            ))
+                        ) : (
+                            <div className="text-center py-8 text-muted-foreground font-medium bg-muted/20 rounded-xl border border-dashed">
+                                {loading ? 'Fetching printers...' : 'No printers found. Ensure Electron is running.'}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between p-6 rounded-2xl border bg-background">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-secondary rounded-xl text-primary">
+                            <CreditCard className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <div className="font-bold text-lg">Card Terminal</div>
+                            <div className="text-sm text-muted-foreground">Stripe Reader S700</div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                        <span className="text-xs font-bold text-green-500 uppercase tracking-widest">Connected</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 const SETTINGS_TABS = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -78,41 +178,7 @@ export function SettingsPage() {
                         </div>
                     )}
 
-                    {activeTab === 'hardware' && (
-                        <div className="space-y-8 max-w-2xl">
-                            <h3 className="text-xl font-bold mb-6">Printer & Scanner</h3>
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between p-6 rounded-2xl border bg-background">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-secondary rounded-xl text-primary">
-                                            <Printer className="h-6 w-6" />
-                                        </div>
-                                        <div>
-                                            <div className="font-bold text-lg">Receipt Printer</div>
-                                            <div className="text-sm text-muted-foreground">Epson TM-T88VI (USB)</div>
-                                        </div>
-                                    </div>
-                                    <button className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground font-bold hover:bg-secondary/80 transition-colors">Configure</button>
-                                </div>
-
-                                <div className="flex items-center justify-between p-6 rounded-2xl border bg-background">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-secondary rounded-xl text-primary">
-                                            <CreditCard className="h-6 w-6" />
-                                        </div>
-                                        <div>
-                                            <div className="font-bold text-lg">Card Terminal</div>
-                                            <div className="text-sm text-muted-foreground">Stripe Reader S700</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-2 w-2 rounded-full bg-green-500" />
-                                        <span className="text-xs font-bold text-green-500 uppercase tracking-widest">Connected</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {activeTab === 'hardware' && <HardwareSettings />}
                 </div>
             </div>
         </div>

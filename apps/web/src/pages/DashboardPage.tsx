@@ -1,13 +1,15 @@
 import { useRxCollection, useRxQuery } from 'rxdb-hooks'
-import { TrendingUp, ShoppingBag, Users, DollarSign, Calendar } from 'lucide-react'
+import { TrendingUp, ShoppingBag, Users, DollarSign, Calendar, X, CreditCard, Banknote, Package, Clock } from 'lucide-react'
+import { useState } from 'react'
 import type { Order } from '../db/database'
 
 export function DashboardPage() {
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
     const orderCollection = useRxCollection<Order>('orders')
 
     // Fetch all orders
     const { result: orders = [] } = useRxQuery(
-        (orderCollection ? orderCollection.find() : null) as any
+        (orderCollection ? orderCollection.find().sort({ timestamp: 'desc' }) : null) as any
     ) as { result: Order[] }
 
     // Calculate stats
@@ -42,7 +44,7 @@ export function DashboardPage() {
     })
 
     return (
-        <div className="p-8 h-full bg-background overflow-y-auto no-scrollbar">
+        <div className="p-8 h-full bg-background overflow-y-auto no-scrollbar relative">
             <div className="flex justify-between items-center mb-10">
                 <div>
                     <h1 className="text-4xl font-black text-foreground tracking-tight">System Overview</h1>
@@ -198,9 +200,13 @@ export function DashboardPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {orders.slice(0, 5).map((order) => (
-                                    <tr key={order.id} className="hover:bg-muted/20 transition-colors">
-                                        <td className="px-6 py-4 font-mono text-xs font-bold text-muted-foreground">#{order.id.slice(0, 8)}</td>
+                                {orders.slice(0, 8).map((order) => (
+                                    <tr
+                                        key={order.id}
+                                        className="hover:bg-muted/20 transition-colors cursor-pointer group"
+                                        onClick={() => setSelectedOrder(order)}
+                                    >
+                                        <td className="px-6 py-4 font-mono text-xs font-bold text-muted-foreground group-hover:text-primary transition-colors">#{order.id.slice(0, 8)}</td>
                                         <td className="px-6 py-4 text-sm font-medium">{order.items.length} items</td>
                                         <td className="px-6 py-4 text-sm font-black text-foreground">${order.total.toFixed(2)}</td>
                                         <td className="px-6 py-4">
@@ -221,6 +227,97 @@ export function DashboardPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Order Details Modal Overlay */}
+            {selectedOrder && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-end bg-background/40 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div
+                        className="w-full max-w-md h-full bg-card border-l shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6 border-b flex justify-between items-center">
+                            <div>
+                                <h2 className="text-2xl font-black">Order Details</h2>
+                                <p className="text-xs font-mono font-bold text-muted-foreground uppercase tracking-widest mt-1">Order #{selectedOrder.id}</p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedOrder(null)}
+                                className="p-2 hover:bg-muted rounded-full transition-colors"
+                            >
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                            {/* Summary Cards */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-4 bg-muted/30 rounded-2xl border">
+                                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                                        <Clock className="h-4 w-4" />
+                                        <span className="text-[10px] font-black uppercase tracking-wider">Date</span>
+                                    </div>
+                                    <p className="font-bold text-sm">{new Date(selectedOrder.timestamp).toLocaleDateString()}</p>
+                                    <p className="text-xs text-muted-foreground">{new Date(selectedOrder.timestamp).toLocaleTimeString()}</p>
+                                </div>
+                                <div className="p-4 bg-muted/30 rounded-2xl border">
+                                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                                        {selectedOrder.paymentMethod === 'Cash' ? <Banknote className="h-4 w-4" /> : <CreditCard className="h-4 w-4" />}
+                                        <span className="text-[10px] font-black uppercase tracking-wider">Payment</span>
+                                    </div>
+                                    <p className="font-bold text-sm">{selectedOrder.paymentMethod || 'Unknown'}</p>
+                                </div>
+                            </div>
+
+                            {/* Items List */}
+                            <div>
+                                <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                                    <Package className="h-4 w-4" />
+                                    <span className="text-xs font-black uppercase tracking-widest">Ordered Items</span>
+                                </div>
+                                <div className="space-y-3">
+                                    {selectedOrder.items.map((item, idx) => (
+                                        <div key={idx} className="flex justify-between items-center p-3 bg-muted/10 rounded-xl border border-transparent hover:border-muted-foreground/10 transition-colors">
+                                            <div className="flex gap-4 items-center">
+                                                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center font-black text-primary text-xs">
+                                                    {item.quantity}x
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-sm">{item.name}</p>
+                                                    <p className="text-xs text-muted-foreground">${item.price.toFixed(2)} each</p>
+                                                </div>
+                                            </div>
+                                            <p className="font-black text-sm">${(item.price * item.quantity).toFixed(2)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6 bg-muted/20 border-t space-y-4">
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Subtotal</span>
+                                    <span className="font-medium">${(selectedOrder.total / 1.08).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Tax (8%)</span>
+                                    <span className="font-medium">${(selectedOrder.total - (selectedOrder.total / 1.08)).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-2xl font-black pt-2 border-t text-foreground">
+                                    <span>Total</span>
+                                    <span>${selectedOrder.total.toFixed(2)}</span>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setSelectedOrder(null)}
+                                className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black text-sm shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
+                            >
+                                Close Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

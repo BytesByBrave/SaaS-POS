@@ -1,4 +1,4 @@
-import { Search, Plus, Minus, ShoppingCart, CheckCircle2 } from 'lucide-react'
+import { Search, Plus, Minus, ShoppingCart, CheckCircle2, CreditCard, Banknote, X } from 'lucide-react'
 import { useState } from 'react'
 import { useRxCollection, useRxQuery } from 'rxdb-hooks'
 import { v4 as uuidv4 } from 'uuid'
@@ -12,6 +12,10 @@ export function PosPage() {
     const [activeCategory, setActiveCategory] = useState('All')
     const [cart, setCart] = useState<(Product & { quantity: number })[]>([])
     const [searchQuery, setSearchQuery] = useState('')
+    const [activeOrderId, setActiveOrderId] = useState<string | null>(null)
+    const [showDrafts, setShowDrafts] = useState(false)
+    const [showPaymentModal, setShowPaymentModal] = useState(false)
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'Cash' | 'Card'>('Cash')
 
     const productCollection = useRxCollection<Product>('products')
     const orderCollection = useRxCollection<Order>('orders')
@@ -20,6 +24,13 @@ export function PosPage() {
         (productCollection ? productCollection.find().sort({ name: 'asc' }) : null) as any
     ) as { result: Product[] }
 
+    const { result: draftOrders = [] } = useRxQuery(
+        (orderCollection ? orderCollection.find({
+            selector: { status: 'draft' },
+            sort: [{ timestamp: 'desc' }]
+        }) : null) as any
+    ) as { result: Order[] }
+
     // Sync status from local storage or service
     const [isOnline, setIsOnline] = useState(navigator.onLine)
     useState(() => {
@@ -27,15 +38,24 @@ export function PosPage() {
         window.addEventListener('offline', () => setIsOnline(false))
     })
 
-    const addToCart = (product: Product) => {
+    const addToCart = (product: any) => {
+        // Ensure we get a plain object if it's an RxDocument
+        const productData: Product = typeof product.toJSON === 'function' ? product.toJSON() : {
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            category: product.category,
+            color: product.color
+        };
+
         setCart(prev => {
-            const existing = prev.find(item => item.id === product.id)
+            const existing = prev.find(item => item.id === productData.id)
             if (existing) {
                 return prev.map(item =>
-                    item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+                    item.id === productData.id ? { ...item, quantity: item.quantity + 1 } : item
                 )
             }
-            return [...prev, { ...product, quantity: 1 }]
+            return [...prev, { ...productData, quantity: 1 }]
         })
     }
 
@@ -61,16 +81,81 @@ export function PosPage() {
 
     const [showSuccess, setShowSuccess] = useState(false)
 
+    const saveDraft = async () => {
+        if (!orderCollection || cart.length === 0) return
+
+        const subtotal = cart.reduce((sum, item) => sum + ((item.price ?? 0) * item.quantity), 0)
+        const total = subtotal * 1.08
+
+        const orderData: Order = {
+            id: activeOrderId || uuidv4(),
+            items: cart.map(item => ({
+                productId: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity
+            })),
+            total: total,
+            status: 'draft',
+            timestamp: Date.now()
+        }
+
+        try {
+            if (activeOrderId) {
+                const doc = await orderCollection.findOne(activeOrderId).exec()
+                if (doc) {
+                    await doc.patch(orderData)
+                } else {
+                    await orderCollection.insert(orderData)
+                }
+            } else {
+                await orderCollection.insert(orderData)
+            }
+            setCart([])
+            setActiveOrderId(null)
+            console.log('Order saved as draft:', orderData.id)
+        } catch (err) {
+            console.error('Failed to save draft:', err)
+        }
+    }
+
+    const resumeOrder = (order: Order) => {
+        const orderItems = order.items.map(item => ({
+            id: item.productId,
+            name: item.name,
+            price: item.price,
+            category: '', // We don't have category in OrderItem, but it's needed for the Product type in cart
+            quantity: item.quantity
+        }))
+        setCart(orderItems as any)
+        setActiveOrderId(order.id)
+        setShowDrafts(false)
+    }
+
+    const startNewOrder = () => {
+        setCart([])
+        setActiveOrderId(null)
+    }
+
+    const deleteDraft = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation()
+        if (!orderCollection) return
+        const doc = await orderCollection.findOne(id).exec()
+        if (doc) {
+            await doc.remove()
+        }
+    }
+
     const handleCheckout = async () => {
         if (!orderCollection) return
         if (cart.length === 0) return
 
-        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+        const subtotal = cart.reduce((sum, item) => sum + ((item.price ?? 0) * item.quantity), 0)
         const tax = subtotal * 0.08
         const total = subtotal + tax
 
         const newOrder: Order = {
-            id: uuidv4(),
+            id: activeOrderId || uuidv4(),
             items: cart.map(item => ({
                 productId: item.id,
                 name: item.name,
@@ -79,11 +164,21 @@ export function PosPage() {
             })),
             total: total,
             status: 'pending',
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            paymentMethod: selectedPaymentMethod
         }
 
         try {
-            await orderCollection.insert(newOrder)
+            if (activeOrderId) {
+                const doc = await orderCollection.findOne(activeOrderId).exec()
+                if (doc) {
+                    await doc.patch(newOrder)
+                } else {
+                    await orderCollection.insert(newOrder)
+                }
+            } else {
+                await orderCollection.insert(newOrder)
+            }
 
             // Print Receipt
             await HardwareService.printReceipt({
@@ -93,10 +188,12 @@ export function PosPage() {
                 tax,
                 total,
                 timestamp: newOrder.timestamp,
-                paymentMethod: 'Cash' // For now default to Cash
+                paymentMethod: selectedPaymentMethod
             })
 
             setCart([])
+            setActiveOrderId(null)
+            setShowPaymentModal(false)
             setShowSuccess(true)
             setTimeout(() => setShowSuccess(false), 3000)
             console.log('Order created:', newOrder)
@@ -106,7 +203,7 @@ export function PosPage() {
         }
     }
 
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    const total = cart.reduce((sum, item) => sum + ((item.price ?? 0) * item.quantity), 0)
 
     const filteredProducts = products.filter(p => {
         const matchesCategory = activeCategory === 'All' || p.category === activeCategory
@@ -135,10 +232,53 @@ export function PosPage() {
                             {isOnline ? 'Connected' : 'Offline Mode'}
                         </div>
                     </div>
-                    <div className="text-sm font-medium text-muted-foreground px-4 py-2 bg-card rounded-lg border shadow-sm">
-                        {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowDrafts(!showDrafts)}
+                            className={`px-4 py-2 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${showDrafts ? 'bg-primary text-primary-foreground' : 'bg-card border hover:bg-accent shadow-sm'}`}
+                        >
+                            <ShoppingCart className="h-4 w-4" />
+                            Open Orders ({draftOrders.length})
+                        </button>
+                        <div className="text-sm font-medium text-muted-foreground px-4 py-2 bg-card rounded-lg border shadow-sm">
+                            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
                     </div>
                 </div>
+
+                {/* Draft Orders list overlay */}
+                {showDrafts && (
+                    <div className="mb-8 p-6 bg-card rounded-2xl border shadow-xl animate-in slide-in-from-top duration-300">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-lg">Draft Orders</h3>
+                            <button onClick={() => setShowDrafts(false)} className="text-muted-foreground hover:text-foreground">Close</button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {draftOrders.map(order => (
+                                <div key={order.id} className="p-4 rounded-xl border bg-muted/30 hover:border-primary/50 transition-all cursor-pointer group relative" onClick={() => resumeOrder(order)}>
+                                    <button
+                                        onClick={(e) => deleteDraft(e, order.id)}
+                                        className="absolute -top-2 -right-2 h-6 w-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
+                                    >
+                                        <Plus className="h-4 w-4 rotate-45" />
+                                    </button>
+                                    <div className="flex justify-between mb-2">
+                                        <span className="font-mono text-xs font-bold text-muted-foreground">#{order.id.slice(0, 8)}</span>
+                                        <span className="text-xs text-muted-foreground">{new Date(order.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                    <div className="font-bold mb-1">{order.items.length} items</div>
+                                    <div className="text-primary font-black">${order.total.toFixed(2)}</div>
+                                    <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-bold text-primary flex items-center gap-1">
+                                        Resume Order <Plus className="h-3 w-3" />
+                                    </div>
+                                </div>
+                            ))}
+                            {draftOrders.length === 0 && (
+                                <div className="col-span-full py-8 text-center text-muted-foreground italic">No draft orders found</div>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Categories */}
                 <div className="flex gap-3 mb-8 overflow-x-auto pb-2 no-scrollbar">
@@ -168,7 +308,7 @@ export function PosPage() {
                                 <Plus className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                             <div className="font-bold text-foreground group-hover:text-primary transition-colors">{product.name}</div>
-                            <div className="text-primary font-black text-lg mt-1">${product.price.toFixed(2)}</div>
+                            <div className="text-primary font-black text-lg mt-1">${(product.price ?? 0).toFixed(2)}</div>
                             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shadow-lg">
                                     <Plus className="h-4 w-4" />
@@ -181,10 +321,19 @@ export function PosPage() {
 
             {/* Cart Section */}
             <div className="w-[400px] bg-card border-l flex flex-col h-full shadow-xl z-20">
-                <div className="p-4 border-b">
+                <div className="p-4 border-b flex justify-between items-center bg-card">
                     <h2 className="text-xl font-bold flex items-center">
-                        <ShoppingCart className="mr-2 h-5 w-5" /> Current Order
+                        <ShoppingCart className="mr-2 h-5 w-5 text-primary" />
+                        {activeOrderId ? 'Editing Order' : 'Current Order'}
                     </h2>
+                    {activeOrderId && (
+                        <button
+                            onClick={startNewOrder}
+                            className="text-xs font-bold bg-muted hover:bg-accent px-2 py-1 rounded transition-colors"
+                        >
+                            New Order
+                        </button>
+                    )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -200,7 +349,7 @@ export function PosPage() {
                             <div key={item.id} className="flex justify-between items-center bg-muted/30 p-3 rounded-lg">
                                 <div className="flex-1">
                                     <div className="font-medium">{item.name}</div>
-                                    <div className="text-sm text-muted-foreground">${item.price.toFixed(2)}</div>
+                                    <div className="text-sm text-muted-foreground">${(item.price ?? 0).toFixed(2)}</div>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <button
@@ -225,26 +374,81 @@ export function PosPage() {
                 <div className="p-4 bg-muted/20 border-t space-y-4">
                     <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Subtotal</span>
-                        <span>${total.toFixed(2)}</span>
+                        <span>${(total ?? 0).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Tax (8%)</span>
-                        <span>${(total * 0.08).toFixed(2)}</span>
+                        <span>${((total ?? 0) * 0.08).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-xl font-bold pt-2 border-t">
                         <span>Total</span>
-                        <span>${(total * 1.08).toFixed(2)}</span>
+                        <span>${((total ?? 0) * 1.08).toFixed(2)}</span>
                     </div>
 
-                    <button
-                        onClick={handleCheckout}
-                        className="w-full bg-primary text-primary-foreground h-14 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={cart.length === 0}
-                    >
-                        Checkout
-                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={saveDraft}
+                            className="bg-card border text-foreground h-14 rounded-xl font-bold text-lg hover:bg-accent transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                            disabled={cart.length === 0}
+                        >
+                            Save Draft
+                        </button>
+                        <button
+                            onClick={() => setShowPaymentModal(true)}
+                            className="bg-primary text-primary-foreground h-14 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-50"
+                            disabled={cart.length === 0}
+                        >
+                            Checkout
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            {/* Payment Modal */}
+            {showPaymentModal && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-card w-full max-w-md p-8 rounded-3xl border shadow-2xl scale-in-center">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-2xl font-black">Select Payment</h2>
+                            <button onClick={() => setShowPaymentModal(false)} className="p-2 hover:bg-muted rounded-full">
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                            <button
+                                onClick={() => setSelectedPaymentMethod('Cash')}
+                                className={`p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-4 ${selectedPaymentMethod === 'Cash' ? 'border-primary bg-primary/10' : 'border-transparent bg-muted/30 hover:bg-muted/50'}`}
+                            >
+                                <Banknote className={`h-8 w-8 ${selectedPaymentMethod === 'Cash' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                <span className={`font-bold ${selectedPaymentMethod === 'Cash' ? 'text-primary' : ''}`}>Cash</span>
+                            </button>
+                            <button
+                                onClick={() => setSelectedPaymentMethod('Card')}
+                                className={`p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-4 ${selectedPaymentMethod === 'Card' ? 'border-primary bg-primary/10' : 'border-transparent bg-muted/30 hover:bg-muted/50'}`}
+                            >
+                                <CreditCard className={`h-8 w-8 ${selectedPaymentMethod === 'Card' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                <span className={`font-bold ${selectedPaymentMethod === 'Card' ? 'text-primary' : ''}`}>Card</span>
+                            </button>
+                        </div>
+
+                        <div className="p-4 bg-muted/30 rounded-2xl mb-8">
+                            <div className="flex justify-between items-center text-xl font-black">
+                                <span className="text-muted-foreground text-sm uppercase tracking-widest">Total Amount</span>
+                                <span>${(total * 1.08).toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handleCheckout}
+                            className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                        >
+                            Complete Order
+                        </button>
+                    </div>
+                </div>
+            )}
+
 
             {/* Success Overlay */}
             {showSuccess && (

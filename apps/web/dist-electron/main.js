@@ -26,8 +26,11 @@ function createWindow() {
     win.loadFile(path.join(process.env.DIST || "", "index.html"));
   }
 }
-ipcMain.on("print-receipt", (_event, { text }) => {
-  console.log("Main process received print request:", text);
+ipcMain.handle("get-printers", async () => {
+  return await win?.webContents.getPrintersAsync();
+});
+ipcMain.on("print-receipt", (_event, { text, deviceName }) => {
+  console.log("Main process received print request for device:", deviceName || "Default");
   let workerWin = new BrowserWindow({
     show: false,
     webPreferences: {
@@ -39,9 +42,6 @@ ipcMain.on("print-receipt", (_event, { text }) => {
         <body style="margin: 0; padding: 10px; font-family: 'Courier New', Courier, monospace; font-size: 12px; width: 300px;">
             <pre style="white-space: pre-wrap; word-wrap: break-word;">${text}</pre>
         </body>
-        <script>
-            window.onload = () => { window.print(); }
-        <\/script>
         </html>
     `;
   workerWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
@@ -49,8 +49,7 @@ ipcMain.on("print-receipt", (_event, { text }) => {
     workerWin.webContents.print({
       silent: true,
       printBackground: true,
-      deviceName: ""
-      // Leave empty for default printer
+      deviceName: deviceName || ""
     }, (success, errorType) => {
       if (!success) console.error("Print failed:", errorType);
       workerWin.close();

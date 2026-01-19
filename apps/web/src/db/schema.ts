@@ -50,10 +50,13 @@ export const orderSchema = {
         },
         status: {
             type: 'string',
-            enum: ['pending', 'completed', 'synced']
+            enum: ['draft', 'pending', 'completed', 'synced']
         },
         timestamp: {
             type: 'number' // Unix timestamp
+        },
+        paymentMethod: {
+            type: 'string'
         }
     },
     required: ['id', 'items', 'total', 'status', 'timestamp']

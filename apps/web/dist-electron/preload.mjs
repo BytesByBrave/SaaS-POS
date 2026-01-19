@@ -16,5 +16,8 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   invoke(...args) {
     const [channel, ...omit] = args;
     return electron.ipcRenderer.invoke(channel, ...omit);
+  },
+  getPrinters() {
+    return electron.ipcRenderer.invoke("get-printers");
   }
 });

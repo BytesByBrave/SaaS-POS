@@ -1,7 +1,11 @@
-import { createRxDatabase } from 'rxdb';
+import { createRxDatabase, addRxPlugin } from 'rxdb';
 import type { RxDatabase, RxCollection } from 'rxdb';
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
+import { RxDBQueryBuilderPlugin } from 'rxdb/plugins/query-builder';
 import { productSchema, orderSchema } from './schema';
+
+// Add plugins
+addRxPlugin(RxDBQueryBuilderPlugin);
 
 // Types
 export type Product = {
@@ -23,8 +27,9 @@ export type Order = {
     id: string;
     items: OrderItem[];
     total: number;
-    status: 'pending' | 'completed' | 'synced';
+    status: 'draft' | 'pending' | 'completed' | 'synced';
     timestamp: number;
+    paymentMethod?: string;
 };
 
 export type DatabaseCollections = {
