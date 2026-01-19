@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, ipcMain, BrowserWindow } from "electron";
 import path from "path";
 import { fileURLToPath } from "url";
 const __filename$1 = fileURLToPath(import.meta.url);
@@ -11,7 +11,7 @@ function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC || "", "electron-vite.svg"),
     webPreferences: {
-      preload: path.join(__dirname$1, "preload.js")
+      preload: path.join(__dirname$1, "preload.mjs")
     },
     width: 1200,
     height: 800,
@@ -26,6 +26,37 @@ function createWindow() {
     win.loadFile(path.join(process.env.DIST || "", "index.html"));
   }
 }
+ipcMain.on("print-receipt", (_event, { text }) => {
+  console.log("Main process received print request:", text);
+  let workerWin = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      nodeIntegration: false
+    }
+  });
+  const html = `
+        <html>
+        <body style="margin: 0; padding: 10px; font-family: 'Courier New', Courier, monospace; font-size: 12px; width: 300px;">
+            <pre style="white-space: pre-wrap; word-wrap: break-word;">${text}</pre>
+        </body>
+        <script>
+            window.onload = () => { window.print(); }
+        <\/script>
+        </html>
+    `;
+  workerWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+  workerWin.webContents.on("did-finish-load", () => {
+    workerWin.webContents.print({
+      silent: true,
+      printBackground: true,
+      deviceName: ""
+      // Leave empty for default printer
+    }, (success, errorType) => {
+      if (!success) console.error("Print failed:", errorType);
+      workerWin.close();
+    });
+  });
+});
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
