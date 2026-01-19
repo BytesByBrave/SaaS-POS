@@ -11,24 +11,37 @@ import { getDatabase } from './db/database'
 import type { Database } from './db/database'
 import { SyncService } from './services/SyncService'
 
+import { PrivateRoute, RoleRoute } from './components/auth/ProtectedRoute'
+
 const queryClient = new QueryClient()
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <MainLayout />,
+    element: <PrivateRoute />,
     children: [
       {
         path: '/',
-        element: <PosPage />,
-      },
-      {
-        path: '/dashboard',
-        element: <DashboardPage />,
-      },
-      {
-        path: '/settings',
-        element: <SettingsPage />,
+        element: <MainLayout />,
+        children: [
+          {
+            path: '/',
+            element: <PosPage />,
+          },
+          {
+            element: <RoleRoute roles={['admin', 'manager']} />,
+            children: [
+              {
+                path: '/dashboard',
+                element: <DashboardPage />,
+              },
+              {
+                path: '/settings',
+                element: <SettingsPage />,
+              },
+            ],
+          },
+        ],
       },
     ],
   },

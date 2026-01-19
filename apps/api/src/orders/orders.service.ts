@@ -50,4 +50,29 @@ export class OrdersService {
             relations: ['items'],
         });
     }
+
+    async getSalesPerHour(organizationId: string, days: number = 7) {
+        const query = this.ordersRepository.createQueryBuilder('order')
+            .select("EXTRACT(HOUR FROM order.createdAt)", "hour")
+            .addSelect("SUM(order.total)", "total")
+            .where("order.organizationId = :organizationId", { organizationId })
+            .andWhere("order.createdAt >= NOW() - INTERVAL ':days days'", { days })
+            .groupBy("hour")
+            .orderBy("hour", "ASC");
+
+        return query.getRawMany();
+    }
+
+    async getTopItems(organizationId: string, limit: number = 10) {
+        const query = this.orderItemsRepository.createQueryBuilder('item')
+            .select("item.name", "name")
+            .addSelect("SUM(item.quantity)", "quantity")
+            .addSelect("SUM(item.quantity * item.price)", "revenue")
+            .where("item.organizationId = :organizationId", { organizationId })
+            .groupBy("item.name")
+            .orderBy("quantity", "DESC")
+            .limit(limit);
+
+        return query.getRawMany();
+    }
 }

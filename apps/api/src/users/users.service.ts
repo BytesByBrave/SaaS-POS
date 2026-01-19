@@ -23,8 +23,12 @@ export class UsersService {
         return this.usersRepository.save(user);
     }
 
-    async findAll(organizationId: string): Promise<User[]> {
+    async findAllByOrganization(organizationId: string): Promise<User[]> {
         return this.usersRepository.find({ where: { organizationId } });
+    }
+
+    async findOneById(id: string, organizationId: string): Promise<User | null> {
+        return this.usersRepository.findOne({ where: { id, organizationId } });
     }
 
     async findByEmail(email: string): Promise<User | null> {

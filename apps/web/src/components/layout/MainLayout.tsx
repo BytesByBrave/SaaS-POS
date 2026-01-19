@@ -5,6 +5,9 @@ import { useState, useEffect } from 'react'
 export function MainLayout() {
     const location = useLocation()
     const [collapsed, setCollapsed] = useState(false)
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    const role = user.role || 'staff'
+
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
             return document.documentElement.classList.contains('dark') ||
@@ -23,11 +26,17 @@ export function MainLayout() {
         }
     }, [isDarkMode])
 
+    const handleLogout = () => {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+    }
+
     const navItems = [
-        { icon: ShoppingCart, label: 'Point of Sale', path: '/' },
-        { icon: LayoutDashboard, label: 'Analytics', path: '/dashboard' },
-        { icon: Settings, label: 'System Settings', path: '/settings' },
-    ]
+        { icon: ShoppingCart, label: 'Point of Sale', path: '/', roles: ['admin', 'manager', 'staff'] },
+        { icon: LayoutDashboard, label: 'Analytics', path: '/dashboard', roles: ['admin', 'manager'] },
+        { icon: Settings, label: 'System Settings', path: '/settings', roles: ['admin', 'manager'] },
+    ].filter(item => item.roles.includes(role))
 
     return (
         <div className="flex h-screen w-full bg-muted/40 font-sans selection:bg-primary/10 selection:text-primary">
@@ -79,7 +88,10 @@ export function MainLayout() {
                         {!collapsed && <span className="ml-4 font-bold tracking-tight">{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>}
                     </button>
 
-                    <button className="flex items-center w-full p-4 rounded-2xl hover:bg-destructive/10 text-destructive/80 hover:text-destructive transition-all group">
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center w-full p-4 rounded-2xl hover:bg-destructive/10 text-destructive/80 hover:text-destructive transition-all group"
+                    >
                         <LogOut className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
                         {!collapsed && <span className="ml-4 font-bold tracking-tight">Logout</span>}
                     </button>

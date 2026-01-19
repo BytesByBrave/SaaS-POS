@@ -16,6 +16,8 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { PaymentsModule } from './payments/payments.module';
 
+import { ThrottlerModule } from '@nestjs/throttler';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -32,9 +34,13 @@ import { PaymentsModule } from './payments/payments.module';
         password: configService.get<string>('DB_PASSWORD', 'postgres'),
         database: configService.get<string>('DB_DATABASE', 'saas_pos'),
         entities: [Organization, Product, Order, OrderItem, User],
-        synchronize: configService.get<boolean>('DB_SYNCHRONIZE', true),
+        synchronize: configService.get<boolean>('DB_SYNCHRONIZE', false),
       }),
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 100,
+    }]),
     OrdersModule,
     ProductsModule,
     OrganizationsModule,

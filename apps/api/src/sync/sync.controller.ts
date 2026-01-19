@@ -1,11 +1,14 @@
 import { Controller, Post, Body, Headers, BadRequestException, Param } from '@nestjs/common';
 import { SyncService } from './sync.service';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
+@ApiTags('sync')
 @Controller('sync')
 export class SyncController {
     constructor(private readonly syncService: SyncService) { }
 
     @Post(':entity/pull')
+    @ApiOperation({ summary: 'Pull changes for an entity (RxDB replication support)' })
     async pull(
         @Param('entity') entity: string,
         @Body() body: { checkpoint: any, limit: number },
@@ -18,6 +21,7 @@ export class SyncController {
     }
 
     @Post(':entity/push')
+    @ApiOperation({ summary: 'Push changes for an entity (RxDB replication support)' })
     async push(
         @Param('entity') entity: string,
         @Body() body: { changes: any[] },

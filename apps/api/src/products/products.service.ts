@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
 import { Product } from './entities/product.entity';
 
 @Injectable()
@@ -37,5 +37,14 @@ export class ProductsService {
 
     async remove(id: string, organizationId: string): Promise<void> {
         await this.productsRepository.delete({ id, organizationId });
+    }
+
+    async findLowStock(organizationId: string, threshold: number = 10): Promise<Product[]> {
+        return this.productsRepository.find({
+            where: {
+                organizationId,
+                stock: LessThan(threshold)
+            }
+        });
     }
 }
