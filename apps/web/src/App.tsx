@@ -58,9 +58,13 @@ function App() {
     let syncService: SyncService | null = null;
 
     const initDB = async () => {
-      const database = await getDatabase()
-      setDb(database)
-      syncService = new SyncService(database)
+      try {
+        const database = await getDatabase()
+        setDb(database)
+        syncService = new SyncService(database)
+      } catch (err) {
+        console.error('Failed to initialize database:', err)
+      }
     }
     initDB()
 

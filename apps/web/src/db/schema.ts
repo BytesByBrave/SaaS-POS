@@ -1,5 +1,5 @@
 export const productSchema = {
-    version: 0,
+    version: 1,
     primaryKey: 'id',
     type: 'object',
     properties: {
@@ -19,6 +19,9 @@ export const productSchema = {
         },
         color: {
             type: 'string' // Tailwind class for UI
+        },
+        image: {
+            type: 'string'
         }
     },
     required: ['id', 'name', 'price', 'category']

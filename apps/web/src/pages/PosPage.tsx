@@ -23,7 +23,7 @@ interface User {
 
 const getCategoriesForFeatures = (features: UserFeatures) => {
     const base = ['All'];
-    if (features?.restaurant) return [...base, 'Tables', 'Starters', 'Mains', 'Drinks', 'Desserts'];
+    if (features?.restaurant) return [...base, 'Coffee', 'Tea', 'Pastries', 'Sandwiches', 'Juices', 'Desserts'];
     if (features?.service) return [...base, 'Appointments', 'Services', 'Retail'];
     return [...base, 'Coffee', 'Tea', 'Pastries', 'Sandwiches', 'Juices', 'Desserts'];
 }
@@ -76,7 +76,8 @@ export function PosPage() {
             name: product.name,
             price: product.price,
             category: product.category,
-            color: product.color
+            color: product.color,
+            image: product.image
         };
 
         setCart(prev => {
@@ -233,13 +234,13 @@ export function PosPage() {
             <div className="flex-1 flex flex-col h-full p-6 overflow-hidden">
                 <div className="flex justify-between items-center mb-8">
                     <div className="flex items-center gap-4">
-                        <div className="relative w-80 group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <div className="relative w-96 group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                             <input
-                                placeholder="Search products or scan..."
+                                placeholder="Search products or scan barcode..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 h-12 rounded-xl border bg-card/50 backdrop-blur-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                                className="w-full pl-12 h-14 rounded-2xl border border-white/5 bg-card/50 backdrop-blur-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none font-medium text-lg"
                             />
                         </div>
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isOnline ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
@@ -247,13 +248,13 @@ export function PosPage() {
                             {isOnline ? 'Connected' : 'Offline Mode'}
                         </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-4 items-center">
                         <button
                             onClick={() => setShowDrafts(!showDrafts)}
-                            className={`px-4 py-2 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${showDrafts ? 'bg-primary text-primary-foreground' : 'bg-card border hover:bg-accent shadow-sm'}`}
+                            className={`px-6 py-3 rounded-2xl font-black text-sm transition-all flex items-center gap-3 shadow-lg hover:scale-105 active:scale-95 whitespace-nowrap min-w-fit ${showDrafts ? 'bg-primary text-primary-foreground shadow-primary/25' : 'bg-card border border-white/5 hover:bg-accent text-foreground'}`}
                         >
-                            <ShoppingCart className="h-4 w-4" />
-                            Open Orders ({draftOrders.length})
+                            <ShoppingCart className="h-5 w-5" />
+                            <span>Open Orders ({draftOrders.length})</span>
                         </button>
                     </div>
                 </div>

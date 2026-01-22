@@ -9,9 +9,9 @@ export const AppDataSource = new DataSource({
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_DATABASE || 'saas_pos',
-    synchronize: false,
+    synchronize: process.env.DB_SYNCHRONIZE === 'true',
     logging: true,
-    entities: ['src/**/*.entity.ts'],
+    entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     migrations: ['src/database/migrations/*.ts'],
     subscribers: [],
 });

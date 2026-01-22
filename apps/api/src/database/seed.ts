@@ -73,12 +73,12 @@ async function seed() {
         if (productCount === 0) {
             console.log('Seeding sample products...');
             const products = [
-                { name: 'Espresso', price: 2.50, category: 'Coffee', stock: 100, organizationId: organization.id },
-                { name: 'Cappuccino', price: 3.50, category: 'Coffee', stock: 100, organizationId: organization.id },
-                { name: 'Latte', price: 4.00, category: 'Coffee', stock: 100, organizationId: organization.id },
-                { name: 'Green Tea', price: 3.00, category: 'Tea', stock: 100, organizationId: organization.id },
-                { name: 'Croissant', price: 3.25, category: 'Pastries', stock: 100, organizationId: organization.id },
-                { name: 'Club Sandwich', price: 8.50, category: 'Sandwiches', stock: 100, organizationId: organization.id },
+                { name: 'Espresso', price: 2.50, category: 'Coffee', stock: 100, organizationId: organization.id, image: 'https://images.unsplash.com/photo-1541167760496-162955ed8a9f?w=400&h=400&fit=crop' },
+                { name: 'Cappuccino', price: 3.50, category: 'Coffee', stock: 100, organizationId: organization.id, image: 'https://images.unsplash.com/photo-1534706936160-d5ee67737049?w=400&h=400&fit=crop' },
+                { name: 'Latte', price: 4.00, category: 'Coffee', stock: 100, organizationId: organization.id, image: 'https://images.unsplash.com/photo-1536939459926-301728217827?w=400&h=400&fit=crop' },
+                { name: 'Green Tea', price: 3.00, category: 'Tea', stock: 100, organizationId: organization.id, image: 'https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?w=400&h=400&fit=crop' },
+                { name: 'Croissant', price: 3.25, category: 'Pastries', stock: 100, organizationId: organization.id, image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&h=400&fit=crop' },
+                { name: 'Club Sandwich', price: 8.50, category: 'Sandwiches', stock: 100, organizationId: organization.id, image: 'https://images.unsplash.com/photo-1567234665766-cd1247ab4443?w=400&h=400&fit=crop' },
             ];
 
             for (const p of products) {
