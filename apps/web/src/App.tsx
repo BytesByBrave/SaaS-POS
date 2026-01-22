@@ -12,13 +12,18 @@ import type { Database } from './db/database'
 import { SyncService } from './services/SyncService'
 
 import { PrivateRoute, RoleRoute } from './components/auth/ProtectedRoute'
+import { ErrorBoundary } from './components/common/ErrorBoundary'
 
 const queryClient = new QueryClient()
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <PrivateRoute />,
+    element: (
+      <ErrorBoundary>
+        <PrivateRoute />
+      </ErrorBoundary>
+    ),
     children: [
       {
         path: '/',
@@ -47,7 +52,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/login',
-    element: <LoginPage />,
+    element: (
+      <ErrorBoundary>
+        <LoginPage />
+      </ErrorBoundary>
+    ),
   },
 ])
 
