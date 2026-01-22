@@ -1,0 +1,43 @@
+version: '3.8'
+
+# Development override - extends docker-compose.yml
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: builder
+    command: npm run start:dev
+    environment:
+      NODE_ENV: development
+      DB_SYNCHRONIZE: "true"
+      LOG_LEVEL: debug
+    volumes:
+      - ./apps/api/src:/app/apps/api/src:delegated
+      - ./apps/api/package.json:/app/apps/api/package.json:ro
+    ports:
+      - "3000:3000"
+      - "9229:9229" # Debug port
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: builder
+    command: npm run dev -- --host 0.0.0.0
+    volumes:
+      - ./apps/web/src:/app/apps/web/src:delegated
+      - ./apps/web/index.html:/app/apps/web/index.html:ro
+      - ./apps/web/package.json:/app/apps/web/package.json:ro
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000
