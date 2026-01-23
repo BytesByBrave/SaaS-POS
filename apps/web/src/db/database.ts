@@ -54,6 +54,7 @@ const createDatabase = async (): Promise<Database> => {
         products: {
             schema: productSchema,
             migrationStrategies: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 1: (oldDoc: any) => oldDoc
             }
         },

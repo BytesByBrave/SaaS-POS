@@ -1,4 +1,9 @@
-import { Processor, Process, OnQueueCompleted, OnQueueFailed } from '@nestjs/bull';
+import {
+  Processor,
+  Process,
+  OnQueueCompleted,
+  OnQueueFailed,
+} from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bull';
 import { QUEUE_NAMES } from '../queue.module';
@@ -32,7 +37,10 @@ export class EmailProcessor {
       const html = this.renderTemplate(job.data.template, job.data.context);
 
       await this.transporter.sendMail({
-        from: this.configService.get('EMAIL_FROM', '"SaaS POS" <noreply@saas-pos.com>'),
+        from: this.configService.get(
+          'EMAIL_FROM',
+          '"SaaS POS" <noreply@saas-pos.com>',
+        ),
         to: job.data.to,
         subject: job.data.subject,
         html,
@@ -41,12 +49,18 @@ export class EmailProcessor {
       this.logger.log(`Email sent successfully to ${job.data.to}`);
       return { success: true, to: job.data.to };
     } catch (error) {
-      this.logger.error(`Failed to send email to ${job.data.to}:`, error.message);
+      this.logger.error(
+        `Failed to send email to ${job.data.to}:`,
+        error.message,
+      );
       throw error;
     }
   }
 
-  private renderTemplate(template: string, context: Record<string, any>): string {
+  private renderTemplate(
+    template: string,
+    context: Record<string, any>,
+  ): string {
     const templates: Record<string, (ctx: any) => string> = {
       welcome: (ctx) => `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

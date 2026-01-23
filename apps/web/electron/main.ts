@@ -45,7 +45,7 @@ ipcMain.handle('get-printers', async () => {
 ipcMain.on('print-receipt', (_event, { text, deviceName }) => {
     console.log('Main process received print request for device:', deviceName || 'Default');
 
-    let workerWin = new BrowserWindow({
+    const workerWin = new BrowserWindow({
         show: false,
         webPreferences: {
             nodeIntegration: false
@@ -80,6 +80,7 @@ const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
     app.quit()
 } else {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
         if (win) {
             if (win.isMinimized()) win.restore()

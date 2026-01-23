@@ -54,8 +54,14 @@ describe('ProductsService', () => {
       const productData = { name: 'New Product', price: 15.99, stock: 50 };
       const organizationId = 'org-uuid-1';
 
-      mockRepository.create.mockReturnValue({ ...productData, organizationId } as Product);
-      mockRepository.save.mockResolvedValue({ ...mockProduct, ...productData } as Product);
+      mockRepository.create.mockReturnValue({
+        ...productData,
+        organizationId,
+      } as Product);
+      mockRepository.save.mockResolvedValue({
+        ...mockProduct,
+        ...productData,
+      } as Product);
 
       const result = await service.create(productData, organizationId);
 
@@ -71,7 +77,9 @@ describe('ProductsService', () => {
       mockRepository.create.mockReturnValue({} as Product);
       mockRepository.save.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.create({}, 'org-1')).rejects.toThrow('Database error');
+      await expect(service.create({}, 'org-1')).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 
@@ -122,9 +130,16 @@ describe('ProductsService', () => {
     it('should update a product successfully', async () => {
       const updateData = { name: 'Updated Name' };
       mockRepository.update.mockResolvedValue({ affected: 1 } as any);
-      mockRepository.findOne.mockResolvedValue({ ...mockProduct, ...updateData } as Product);
+      mockRepository.findOne.mockResolvedValue({
+        ...mockProduct,
+        ...updateData,
+      } as Product);
 
-      const result = await service.update('product-uuid-1', updateData, 'org-uuid-1');
+      const result = await service.update(
+        'product-uuid-1',
+        updateData,
+        'org-uuid-1',
+      );
 
       expect(mockRepository.update).toHaveBeenCalledWith(
         { id: 'product-uuid-1', organizationId: 'org-uuid-1' },
@@ -137,7 +152,11 @@ describe('ProductsService', () => {
       mockRepository.update.mockResolvedValue({ affected: 0 } as any);
       mockRepository.findOne.mockResolvedValue(null);
 
-      const result = await service.update('non-existent', { name: 'test' }, 'org-uuid-1');
+      const result = await service.update(
+        'non-existent',
+        { name: 'test' },
+        'org-uuid-1',
+      );
 
       expect(result).toBeNull();
     });

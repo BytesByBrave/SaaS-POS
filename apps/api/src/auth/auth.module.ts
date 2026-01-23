@@ -18,7 +18,10 @@ import { OrganizationsModule } from '../organizations/organizations.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'super-secret-key-change-me'),
+        secret: configService.get<string>(
+          'JWT_SECRET',
+          'super-secret-key-change-me',
+        ),
         signOptions: { expiresIn: '1d' },
       }),
     }),
@@ -27,4 +30,4 @@ import { OrganizationsModule } from '../organizations/organizations.module';
   controllers: [AuthController],
   exports: [AuthService],
 })
-export class AuthModule { }
+export class AuthModule {}

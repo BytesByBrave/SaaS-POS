@@ -10,4 +10,4 @@ import { Product } from '../products/entities/product.entity';
   controllers: [SyncController],
   providers: [SyncService],
 })
-export class SyncModule { }
+export class SyncModule {}

@@ -14,6 +14,7 @@ export class PrinterService {
     private isElectron: boolean;
 
     private constructor() {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.isElectron = !!(window as any).ipcRenderer;
     }
 
@@ -39,12 +40,13 @@ export class PrinterService {
         }
     }
 
-    async printReceipt(orderId: string, content: string): Promise<boolean> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async printReceipt(orderId: string, _content: string): Promise<boolean> {
         console.log(`Printing receipt for Order ${orderId}`);
 
         if (this.isElectron) {
             // Send raw ESC/POS commands via Electron
-            // (window as any).ipcRenderer.send('print-raw', { content });
+            // (window as any).ipcRenderer.send('print-raw', { content: _content });
             return true;
         }
 

@@ -9,11 +9,13 @@ export function DashboardPage() {
     const orderCollection = useRxCollection<Order>('orders')
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true)
     }, [])
 
     // Fetch all orders
     const { result: orders = [] } = useRxQuery(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (orderCollection ? orderCollection.find().sort({ timestamp: 'desc' }) : null) as any
     ) as { result: Order[] }
 

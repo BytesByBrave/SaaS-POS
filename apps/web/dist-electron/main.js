@@ -31,7 +31,7 @@ ipcMain.handle("get-printers", async () => {
 });
 ipcMain.on("print-receipt", (_event, { text, deviceName }) => {
   console.log("Main process received print request for device:", deviceName || "Default");
-  let workerWin = new BrowserWindow({
+  const workerWin = new BrowserWindow({
     show: false,
     webPreferences: {
       nodeIntegration: false

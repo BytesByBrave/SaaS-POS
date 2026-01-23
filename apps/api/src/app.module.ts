@@ -107,10 +107,12 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => [{
-        ttl: 60000, // 1 minute
-        limit: configService.get('NODE_ENV') === 'production' ? 100 : 1000,
-      }],
+      useFactory: (configService: ConfigService) => [
+        {
+          ttl: 60000, // 1 minute
+          limit: configService.get('NODE_ENV') === 'production' ? 100 : 1000,
+        },
+      ],
     }),
 
     // Core Modules
@@ -142,8 +144,6 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(RequestIdMiddleware, LoggingMiddleware)
-      .forRoutes('*');
+    consumer.apply(RequestIdMiddleware, LoggingMiddleware).forRoutes('*');
   }
 }

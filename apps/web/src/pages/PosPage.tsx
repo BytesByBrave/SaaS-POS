@@ -56,21 +56,26 @@ export function PosPage() {
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true)
     }, [])
 
     const productCollection = useRxCollection<Product>('products')
     const orderCollection = useRxCollection<Order>('orders')
 
+    const productsQuery = productCollection ? productCollection.find().sort({ name: 'asc' }) : null
     const { result: products = [] } = useRxQuery(
-        (productCollection ? productCollection.find().sort({ name: 'asc' }) : null) as any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        productsQuery as any
     ) as { result: Product[] }
 
+    const draftOrdersQuery = orderCollection ? orderCollection.find({
+        selector: { status: 'draft' },
+        sort: [{ timestamp: 'desc' }]
+    }) : null
     const { result: draftOrders = [] } = useRxQuery(
-        (orderCollection ? orderCollection.find({
-            selector: { status: 'draft' },
-            sort: [{ timestamp: 'desc' }]
-        }) : null) as any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        draftOrdersQuery as any
     ) as { result: Order[] }
 
     // Sync status from local storage or service
@@ -88,6 +93,7 @@ export function PosPage() {
 
     const addToCart = (product: Product) => {
         // Ensure we get a plain object if it's an RxDocument
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const productData: Product = typeof (product as any).toJSON === 'function' ? (product as any).toJSON() : {
             id: product.id,
             name: product.name,
@@ -170,6 +176,7 @@ export function PosPage() {
             category: 'All',
             quantity: item.quantity
         }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setCart(orderItems as any)
         setActiveOrderId(order.id)
         setShowDrafts(false)

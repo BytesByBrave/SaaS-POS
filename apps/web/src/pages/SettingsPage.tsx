@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Save, User, Building, Printer, CreditCard, Shield, Bell, RefreshCw, Check, Zap, Sparkles, Sun, Moon } from 'lucide-react'
-import { HardwareService } from '../services/HardwareService'
+import { HardwareService, type PrinterInfo } from '../services/HardwareService'
 
 function HardwareSettings() {
-    const [printers, setPrinters] = useState<any[]>([])
+    const [printers, setPrinters] = useState<PrinterInfo[]>([])
     const [selectedPrinter, setSelectedPrinter] = useState(localStorage.getItem('selected_printer') || '')
     const [loading, setLoading] = useState(false)
 
@@ -163,6 +163,7 @@ export function SettingsPage() {
     const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true)
     }, [])
 

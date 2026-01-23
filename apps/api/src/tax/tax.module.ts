@@ -5,9 +5,9 @@ import { TaxController } from './tax.controller';
 import { TaxRate } from './entities/tax-rate.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([TaxRate])],
-    providers: [TaxService],
-    controllers: [TaxController],
-    exports: [TaxService],
+  imports: [TypeOrmModule.forFeature([TaxRate])],
+  providers: [TaxService],
+  controllers: [TaxController],
+  exports: [TaxService],
 })
-export class TaxModule { }
+export class TaxModule {}
