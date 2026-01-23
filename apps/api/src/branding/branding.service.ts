@@ -13,7 +13,7 @@ export class BrandingService {
     private readonly brandingRepository: Repository<OrganizationBranding>,
     @InjectRepository(ReceiptTemplate)
     private readonly templateRepository: Repository<ReceiptTemplate>,
-  ) { }
+  ) {}
 
   // Branding Operations
   async getBranding(organizationId: string): Promise<OrganizationBranding> {
@@ -45,7 +45,9 @@ export class BrandingService {
     return this.getBranding(organizationId);
   }
 
-  private async createDefaultBranding(organizationId: string): Promise<OrganizationBranding> {
+  private async createDefaultBranding(
+    organizationId: string,
+  ): Promise<OrganizationBranding> {
     const branding = this.brandingRepository.create({
       organizationId,
       primaryColor: '#4F46E5',
@@ -92,9 +94,17 @@ ${branding.customCss || ''}
     });
   }
 
-  async getDefaultTemplate(organizationId: string, type: string = 'thermal'): Promise<ReceiptTemplate> {
+  async getDefaultTemplate(
+    organizationId: string,
+    type: string = 'thermal',
+  ): Promise<ReceiptTemplate> {
     let template = await this.templateRepository.findOne({
-      where: { organizationId, type: type as any, isDefault: true, isActive: true },
+      where: {
+        organizationId,
+        type: type as any,
+        isDefault: true,
+        isActive: true,
+      },
     });
 
     if (!template) {
@@ -104,13 +114,19 @@ ${branding.customCss || ''}
     return template;
   }
 
-  async getTemplate(id: string, organizationId: string): Promise<ReceiptTemplate | null> {
+  async getTemplate(
+    id: string,
+    organizationId: string,
+  ): Promise<ReceiptTemplate | null> {
     return this.templateRepository.findOne({
       where: { id, organizationId },
     });
   }
 
-  async createTemplate(organizationId: string, data: Partial<ReceiptTemplate>): Promise<ReceiptTemplate> {
+  async createTemplate(
+    organizationId: string,
+    data: Partial<ReceiptTemplate>,
+  ): Promise<ReceiptTemplate> {
     if (data.isDefault) {
       await this.templateRepository.update(
         { organizationId, type: data.type, isDefault: true },
@@ -148,7 +164,10 @@ ${branding.customCss || ''}
     await this.templateRepository.delete({ id, organizationId });
   }
 
-  private async createDefaultTemplate(organizationId: string, type: string = 'thermal'): Promise<ReceiptTemplate> {
+  private async createDefaultTemplate(
+    organizationId: string,
+    type: string = 'thermal',
+  ): Promise<ReceiptTemplate> {
     const template = this.templateRepository.create({
       organizationId,
       name: 'Default Template',
@@ -332,11 +351,13 @@ ${branding.customCss || ''}
     let result = template;
 
     // Replace simple placeholders
-    result = result.replace(/\{\{branding\.(\w+)\}\}/g, (_, key) =>
-      context.branding?.[key] || ''
+    result = result.replace(
+      /\{\{branding\.(\w+)\}\}/g,
+      (_, key) => context.branding?.[key] || '',
     );
-    result = result.replace(/\{\{order\.(\w+)\}\}/g, (_, key) =>
-      context.order?.[key] || ''
+    result = result.replace(
+      /\{\{order\.(\w+)\}\}/g,
+      (_, key) => context.order?.[key] || '',
     );
 
     return result;

@@ -8,6 +8,13 @@ export interface ReceiptData {
     paymentMethod: string;
 }
 
+export interface PrinterInfo {
+    name: string;
+    status: number;
+    isDefault?: boolean;
+    description?: string;
+}
+
 export class HardwareService {
     static formatReceipt(data: ReceiptData): string {
         const line = "--------------------------------";
@@ -40,8 +47,10 @@ export class HardwareService {
             `      www.saaspos.digital      \n\n\n`;
     }
 
-    static async getPrinters() {
+    static async getPrinters(): Promise<PrinterInfo[]> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((window as any).ipcRenderer?.getPrinters) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return await (window as any).ipcRenderer.getPrinters();
         }
         return [];
@@ -132,6 +141,7 @@ export class HardwareService {
         const selectedPrinter = localStorage.getItem('selected_printer');
 
         // Use the ipcRenderer exposed via preload script if available
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const ipc = (window as any).ipcRenderer;
 
         if (ipc) {

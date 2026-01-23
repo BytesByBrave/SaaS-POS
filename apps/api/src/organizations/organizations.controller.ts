@@ -11,25 +11,25 @@ import { CreateOrganizationDto } from './dto/create-organization.dto';
 @Controller('organizations')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class OrganizationsController {
-    constructor(private readonly organizationsService: OrganizationsService) { }
+  constructor(private readonly organizationsService: OrganizationsService) {}
 
-    @Post()
-    @Roles('admin')
-    @ApiOperation({ summary: 'Create a new organization (Global Admin only)' })
-    create(@Body() orgData: CreateOrganizationDto) {
-        return this.organizationsService.create(orgData);
-    }
+  @Post()
+  @Roles('admin')
+  @ApiOperation({ summary: 'Create a new organization (Global Admin only)' })
+  create(@Body() orgData: CreateOrganizationDto) {
+    return this.organizationsService.create(orgData);
+  }
 
-    @Get()
-    @Roles('admin')
-    @ApiOperation({ summary: 'Get all organizations (Global Admin only)' })
-    findAll() {
-        return this.organizationsService.findAll();
-    }
+  @Get()
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get all organizations (Global Admin only)' })
+  findAll() {
+    return this.organizationsService.findAll();
+  }
 
-    @Get(':id')
-    @ApiOperation({ summary: 'Get an organization by ID' })
-    findOne(@Param('id') id: string) {
-        return this.organizationsService.findOne(id);
-    }
+  @Get(':id')
+  @ApiOperation({ summary: 'Get an organization by ID' })
+  findOne(@Param('id') id: string) {
+    return this.organizationsService.findOne(id);
+  }
 }

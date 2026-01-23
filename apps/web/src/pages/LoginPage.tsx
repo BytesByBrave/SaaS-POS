@@ -33,6 +33,7 @@ export function LoginPage() {
             localStorage.setItem('user', JSON.stringify(data.user));
 
             navigate('/');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             setError(err.message);
         } finally {

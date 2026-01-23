@@ -6,32 +6,32 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-    constructor(
-        @InjectRepository(User)
-        private usersRepository: Repository<User>
-    ) { }
+  constructor(
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+  ) {}
 
-    async create(userData: any, organizationId: string): Promise<User> {
-        const { password, ...rest } = userData;
-        const passwordHash = await bcrypt.hash(password, 10);
+  async create(userData: any, organizationId: string): Promise<User> {
+    const { password, ...rest } = userData;
+    const passwordHash = await bcrypt.hash(password, 10);
 
-        const user = this.usersRepository.create({
-            ...rest,
-            passwordHash,
-            organizationId,
-        } as Partial<User>);
-        return this.usersRepository.save(user);
-    }
+    const user = this.usersRepository.create({
+      ...rest,
+      passwordHash,
+      organizationId,
+    } as Partial<User>);
+    return this.usersRepository.save(user);
+  }
 
-    async findAllByOrganization(organizationId: string): Promise<User[]> {
-        return this.usersRepository.find({ where: { organizationId } });
-    }
+  async findAllByOrganization(organizationId: string): Promise<User[]> {
+    return this.usersRepository.find({ where: { organizationId } });
+  }
 
-    async findOneById(id: string, organizationId: string): Promise<User | null> {
-        return this.usersRepository.findOne({ where: { id, organizationId } });
-    }
+  async findOneById(id: string, organizationId: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { id, organizationId } });
+  }
 
-    async findByEmail(email: string): Promise<User | null> {
-        return this.usersRepository.findOne({ where: { email } });
-    }
+  async findByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { email } });
+  }
 }

@@ -2,7 +2,7 @@ import type { Database } from '../db/database';
 
 export class SyncService {
     private db: Database;
-    private syncInterval: any = null;
+    private syncInterval: ReturnType<typeof setInterval> | null = null;
     private isOnline = navigator.onLine;
 
     constructor(db: Database) {

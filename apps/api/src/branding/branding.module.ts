@@ -6,9 +6,9 @@ import { OrganizationBranding } from './entities/organization-branding.entity';
 import { ReceiptTemplate } from './entities/receipt-template.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([OrganizationBranding, ReceiptTemplate])],
-    providers: [BrandingService],
-    controllers: [BrandingController],
-    exports: [BrandingService],
+  imports: [TypeOrmModule.forFeature([OrganizationBranding, ReceiptTemplate])],
+  providers: [BrandingService],
+  controllers: [BrandingController],
+  exports: [BrandingService],
 })
-export class BrandingModule { }
+export class BrandingModule {}

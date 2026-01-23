@@ -6,9 +6,9 @@ import { Webhook } from './entities/webhook.entity';
 import { WebhookLog } from './entities/webhook-log.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Webhook, WebhookLog])],
-    providers: [WebhookService],
-    controllers: [WebhookController],
-    exports: [WebhookService],
+  imports: [TypeOrmModule.forFeature([Webhook, WebhookLog])],
+  providers: [WebhookService],
+  controllers: [WebhookController],
+  exports: [WebhookService],
 })
-export class WebhookModule { }
+export class WebhookModule {}
